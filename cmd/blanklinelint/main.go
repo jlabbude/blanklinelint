@@ -1,8 +1,8 @@
 package main
 
 import (
+	"blanklinelint/pkg/analyzer"
 	"golang.org/x/tools/go/analysis/singlechecker"
-	"linelint/pkg/analyzer"
 )
 
 func main() {

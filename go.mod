@@ -1,4 +1,4 @@
-module linelint
+module blanklinelint
 
 go 1.23.0
 
