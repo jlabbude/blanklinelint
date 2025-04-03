@@ -7,6 +7,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 	"os"
 	"strings"
+	"sync"
 )
 
 type BlankLineLint struct{}
@@ -34,14 +35,17 @@ func (b *BlankLineLint) GetLoadMode() string {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	var wg sync.WaitGroup
 	for _, file := range pass.Files {
-		checkTopLevelDecls(pass, file, pass.Fset)
-		checkFunctionBodies(pass, file)
+		go checkTopLevelDecls(pass, file, pass.Fset, &wg)
+		go checkFunctionBodies(pass, file, &wg)
+		wg.Add(2)
 	}
+	wg.Wait()
 	return nil, nil
 }
 
-func checkTopLevelDecls(pass *analysis.Pass, file *ast.File, fset *token.FileSet) {
+func checkTopLevelDecls(pass *analysis.Pass, file *ast.File, fset *token.FileSet, wg *sync.WaitGroup) {
 	src := fset.File(file.Pos()).Name()
 	content, err := os.ReadFile(src)
 	if err != nil {
@@ -67,9 +71,10 @@ func checkTopLevelDecls(pass *analysis.Pass, file *ast.File, fset *token.FileSet
 			pass.Reportf(d2.Pos(), "top-level declarations should be separated by a blank line")
 		}
 	}
+	wg.Done()
 }
 
-func checkFunctionBodies(pass *analysis.Pass, file *ast.File) {
+func checkFunctionBodies(pass *analysis.Pass, file *ast.File, wg *sync.WaitGroup) {
 	for _, decl := range file.Decls {
 		fn, ok := decl.(*ast.FuncDecl)
 		if !ok || fn.Body == nil {
@@ -77,6 +82,7 @@ func checkFunctionBodies(pass *analysis.Pass, file *ast.File) {
 		}
 		checkStatements(pass, fn.Body.List, file.Comments, pass.Fset)
 	}
+	wg.Done()
 }
 
 func isLineComment(line int, comments []*ast.CommentGroup, fset *token.FileSet) bool {
