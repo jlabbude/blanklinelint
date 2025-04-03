@@ -1,13 +1,8 @@
-module blanklinelint
+module github.com/jlabbude/blanklinelint
 
-go 1.23.0
-
-toolchain go1.23.1
-
-require golang.org/x/tools v0.31.0
+go 1.24.1
 
 require (
-	github.com/google/go-cmp v0.7.0 // indirect
-	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
+	github.com/golangci/plugin-module-register v0.1.1
+	golang.org/x/tools v0.31.0
 )
