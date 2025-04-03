@@ -1,0 +1,11 @@
+version: 1
+linters:
+  enable:
+    - blanklinelint
+  settings:
+    custom:
+      blanklinelint:
+        type: module
+        path: /blanklinelint.so
+        description: checks for blank lines inside function bodies
+        original-url: github.com/jlabbude/blanklinelint
