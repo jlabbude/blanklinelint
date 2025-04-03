@@ -37,9 +37,10 @@ func (b *BlankLineLint) GetLoadMode() string {
 func run(pass *analysis.Pass) (interface{}, error) {
 	var wg sync.WaitGroup
 	for _, file := range pass.Files {
+		wg.Add(1)
 		go checkTopLevelDecls(pass, file, pass.Fset, &wg)
+		wg.Add(1)
 		go checkFunctionBodies(pass, file, &wg)
-		wg.Add(2)
 	}
 	wg.Wait()
 	return nil, nil
@@ -95,22 +96,23 @@ func isLineComment(line int, comments []*ast.CommentGroup, fset *token.FileSet) 
 }
 
 func checkStatements(pass *analysis.Pass, stmts []ast.Stmt, comments []*ast.CommentGroup, fset *token.FileSet) {
+	comm := comments
 	for i := 0; i < len(stmts)-1; i++ {
 		current, next := stmts[i], stmts[i+1]
 		currentEnd := fset.Position(current.End()).Line
 		nextStart := fset.Position(next.Pos()).Line
 		if nextStart-currentEnd > 1 &&
-			!isLineComment(fset.Position(fset.File(current.End()).LineStart(currentEnd+1)).Line, comments, fset) {
+			!isLineComment(fset.Position(fset.File(current.End()).LineStart(currentEnd+1)).Line, comm, fset) {
 			pass.Reportf(fset.File(current.End()).LineStart(currentEnd+1), "unnecessary blank line between statements")
 		}
-		checkNestedStatements(pass, current, fset)
+		checkNestedStatements(pass, current, comments, fset)
 	}
 	if len(stmts) > 0 {
-		checkNestedStatements(pass, stmts[len(stmts)-1], fset)
+		checkNestedStatements(pass, stmts[len(stmts)-1], comments, fset)
 	}
 }
 
-func checkNestedStatements(pass *analysis.Pass, stmt ast.Stmt, fset *token.FileSet) {
+func checkNestedStatements(pass *analysis.Pass, stmt ast.Stmt, comments []*ast.CommentGroup, fset *token.FileSet) {
 	var body *ast.BlockStmt
 	switch s := stmt.(type) {
 	case *ast.IfStmt:
@@ -132,6 +134,6 @@ func checkNestedStatements(pass *analysis.Pass, stmt ast.Stmt, fset *token.FileS
 	}
 
 	if body != nil {
-		checkStatements(pass, body.List, nil, fset)
+		checkStatements(pass, body.List, comments, fset)
 	}
 }
