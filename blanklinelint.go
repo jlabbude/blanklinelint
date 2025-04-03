@@ -96,13 +96,12 @@ func isLineComment(line int, comments []*ast.CommentGroup, fset *token.FileSet) 
 }
 
 func checkStatements(pass *analysis.Pass, stmts []ast.Stmt, comments []*ast.CommentGroup, fset *token.FileSet) {
-	comm := comments
 	for i := 0; i < len(stmts)-1; i++ {
 		current, next := stmts[i], stmts[i+1]
 		currentEnd := fset.Position(current.End()).Line
 		nextStart := fset.Position(next.Pos()).Line
 		if nextStart-currentEnd > 1 &&
-			!isLineComment(fset.Position(fset.File(current.End()).LineStart(currentEnd+1)).Line, comm, fset) {
+			!isLineComment(fset.Position(fset.File(current.End()).LineStart(currentEnd+1)).Line, comments, fset) {
 			pass.Reportf(fset.File(current.End()).LineStart(currentEnd+1), "unnecessary blank line between statements")
 		}
 		checkNestedStatements(pass, current, comments, fset)
